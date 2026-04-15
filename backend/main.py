@@ -3,15 +3,22 @@ NOC Dashboard — Python Backend (FastAPI)
 Handles SSH connections, device management, and polling.
 """
 import asyncio
+import jwt
+import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional
 
 from database import init_database, get_all_devices, get_device_by_id, create_device
 from database import update_device, delete_device, update_device_status, log_command, get_recent_metrics
+from database import get_user_by_username, get_user_by_id, verify_password, update_user_password
 from ssh_manager import poll_device, restart_device
+
+JWT_SECRET = "voltpulse-noc-secret-key-change-in-production"
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRY_HOURS = 24
 
 
 # --- Pydantic Models ---
@@ -32,6 +39,42 @@ class DeviceUpdate(BaseModel):
     username: Optional[str] = None
     password: Optional[str] = None
     brand: Optional[str] = None
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+# --- JWT Helpers ---
+
+def create_token(user_id, username, role):
+    payload = {
+        "user_id": user_id,
+        "username": username,
+        "role": role,
+        "exp": int(time.time()) + (JWT_EXPIRY_HOURS * 3600),
+        "iat": int(time.time()),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def verify_token(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = authorization.replace("Bearer ", "")
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 
 # --- App Lifecycle ---
@@ -57,6 +100,57 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# --- Auth Routes ---
+
+@app.post("/auth/login")
+def login(payload: LoginRequest):
+    user = get_user_by_username(payload.username)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    if not verify_password(payload.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    token = create_token(user["id"], user["username"], user["role"])
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "username": user["username"],
+            "display_name": user["display_name"],
+            "role": user["role"],
+        }
+    }
+
+
+@app.get("/auth/me")
+def get_me(authorization: str = Header(None)):
+    payload = verify_token(authorization)
+    user = get_user_by_id(payload["user_id"])
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return {
+        "id": user["id"],
+        "username": user["username"],
+        "display_name": user["display_name"],
+        "role": user["role"],
+    }
+
+
+@app.post("/auth/change-password")
+def change_password(payload: ChangePasswordRequest, authorization: str = Header(None)):
+    token_data = verify_token(authorization)
+    user = get_user_by_id(token_data["user_id"])
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    if not verify_password(payload.current_password, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    update_user_password(user["id"], payload.new_password)
+    return {"message": "Password changed successfully"}
 
 
 # --- Device CRUD Routes ---

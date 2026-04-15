@@ -191,7 +191,7 @@ export default function DashboardPage() {
         <div className="page-header">
           <div className="page-header-row">
             <div>
-              <h1 className="page-title">Network Dashboard</h1>
+              <h1 className="page-title">VoltPulse NOC</h1>
               <p className="page-subtitle">Real-time monitoring of all network devices</p>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>

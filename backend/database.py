@@ -1,6 +1,8 @@
 import sqlite3
 import os
 import json
+import hashlib
+import secrets
 from datetime import datetime
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "noc.db")
@@ -63,9 +65,75 @@ def init_database():
         )
     """)
 
+    # --- Users table ---
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            display_name TEXT,
+            role TEXT DEFAULT 'admin',
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+
+    # create default admin if no users exist
+    existing = cursor.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    if existing == 0:
+        default_hash = hash_password("admin")
+        cursor.execute(
+            "INSERT INTO users (username, password_hash, display_name, role) VALUES (?, ?, ?, ?)",
+            ("admin", default_hash, "Administrator", "admin")
+        )
+        print("[DB] Default admin created — username: admin / password: admin")
+
     conn.commit()
     conn.close()
     print(f"[DB] Database initialized at {DB_PATH}")
+
+
+# --- Password Hashing ---
+
+def hash_password(password):
+    """Hash password using SHA-256 with a random salt."""
+    salt = secrets.token_hex(16)
+    pw_hash = hashlib.sha256((salt + password).encode()).hexdigest()
+    return f"{salt}:{pw_hash}"
+
+
+def verify_password(password, stored_hash):
+    """Verify password against stored salt:hash."""
+    try:
+        salt, pw_hash = stored_hash.split(":")
+        check = hashlib.sha256((salt + password).encode()).hexdigest()
+        return check == pw_hash
+    except (ValueError, AttributeError):
+        return False
+
+
+# --- User Auth ---
+
+def get_user_by_username(username):
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def get_user_by_id(user_id):
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def update_user_password(user_id, new_password):
+    conn = get_connection()
+    pw_hash = hash_password(new_password)
+    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (pw_hash, user_id))
+    conn.commit()
+    conn.close()
+    return True
 
 
 # --- Device CRUD ---

@@ -1,4 +1,4 @@
-# NOC Dashboard - Project Context History
+# VoltPulse NOC - Project Context History
 
 This document serves as a _"Context Loader"_ designed specifically to be ingested by subsequent AI assistants (such as Claude, GPT, or Devin) to rapidly adapt and continue the codebase development of this project without losing historical context.
 
@@ -114,3 +114,17 @@ code like real human not like AI!
 - Built Device Management page with table view and CRUD operations.
 - Created reusable components: Sidebar, DeviceCard, StatusBadge, MetricBar, AddDeviceModal, GlowLoader.
 - Added `install.sh` for one-command Ubuntu deployment (systemd services, venv, firewall).
+
+### Milestone 2: Authentication System
+
+**Date**: 2026-04-15
+**Changes**:
+
+- Added `users` table to SQLite with salted SHA-256 password hashing.
+- Default admin account auto-created on first run (`admin` / `admin`).
+- JWT-based authentication with 24-hour expiry (PyJWT).
+- Backend endpoints: `POST /auth/login`, `GET /auth/me`, `POST /auth/change-password`.
+- Frontend login page at `/login` with VoltAgent dark terminal aesthetic (grid background, glow icon, animated card).
+- `AuthContext` provider handles login/logout, token persistence in localStorage, auto-redirect to `/login` if unauthenticated.
+- `Providers.js` client wrapper bridges server-component layout with client-side AuthProvider.
+- Sidebar updated with user display name and logout button.

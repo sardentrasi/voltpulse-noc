@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/components/AuthContext';
 
 export default function Sidebar({ deviceCount, sidebarOpen, onClose }) {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   const navItems = [
     {
@@ -47,7 +49,7 @@ export default function Sidebar({ deviceCount, sidebarOpen, onClose }) {
               </svg>
             </div>
             <div>
-              <div className="sidebar-logo-text">NOC Panel</div>
+              <div className="sidebar-logo-text">VoltPulse NOC</div>
             </div>
             <span className="sidebar-logo-badge">v1.0</span>
           </div>
@@ -72,7 +74,21 @@ export default function Sidebar({ deviceCount, sidebarOpen, onClose }) {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-footer-text">
+          {user && (
+            <div style={{ padding: '0 8px', marginBottom: '12px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--steel-slate)', marginBottom: '4px' }}>Logged in as</div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--snow-white)' }}>{user.display_name || user.username}</div>
+            </div>
+          )}
+          <button className="sidebar-logout" onClick={logout}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Logout
+          </button>
+          <div className="sidebar-footer-text" style={{ marginTop: '12px' }}>
             <span className="sidebar-footer-dot" />
             <span>System Operational</span>
           </div>
