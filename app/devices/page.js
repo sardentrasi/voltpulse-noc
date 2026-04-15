@@ -6,7 +6,7 @@ import AddDeviceModal from '@/components/AddDeviceModal';
 import StatusBadge from '@/components/StatusBadge';
 import GlowLoader from '@/components/GlowLoader';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export default function DevicesPage() {
   const [devices, setDevices] = useState([]);

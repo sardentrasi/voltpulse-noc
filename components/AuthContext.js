@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { useRouter, usePathname } from 'next/navigation';
 
 const AuthContext = createContext(null);
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8100';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

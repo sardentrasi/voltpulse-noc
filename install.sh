@@ -116,7 +116,7 @@ if [ ! -f "${APP_DIR}/.env.local" ]; then
     log "Creating environment config..."
     cat > "${APP_DIR}/.env.local" <<EOF
 # NOC Dashboard Configuration
-NEXT_PUBLIC_API_URL=http://localhost:${BACKEND_PORT}
+NEXT_PUBLIC_API_URL=/api
 EOF
 fi
 
