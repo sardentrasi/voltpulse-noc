@@ -33,13 +33,14 @@ log "Starting NOC Dashboard installation..."
 log "Target directory: ${APP_DIR}"
 
 # --- System update ---
-log "Updating system packages..."
-apt-get update -qq
-apt-get upgrade -y -qq
+log "Updating system packages (please wait)..."
+# Using noninteractive to prevent hanging on prompts
+# Removed apt-get upgrade to avoid interactive config prompts
+DEBIAN_FRONTEND=noninteractive apt-get update -y
 
 # --- Install system dependencies ---
 log "Installing system dependencies..."
-apt-get install -y -qq \
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
     curl \
     wget \
     git \
@@ -48,8 +49,7 @@ apt-get install -y -qq \
     python3-pip \
     python3-venv \
     sqlite3 \
-    ufw \
-    > /dev/null 2>&1
+    ufw
 
 # --- Install Node.js ---
 if command -v node &> /dev/null; then
@@ -58,13 +58,13 @@ if command -v node &> /dev/null; then
         log "Node.js v$(node -v) already installed, skipping..."
     else
         warn "Node.js version too old (v$(node -v)), upgrading..."
-        curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - > /dev/null 2>&1
-        apt-get install -y -qq nodejs > /dev/null 2>&1
+        curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
+        apt-get install -y nodejs
     fi
 else
     log "Installing Node.js ${NODE_VERSION}.x..."
-    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - > /dev/null 2>&1
-    apt-get install -y -qq nodejs > /dev/null 2>&1
+    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
+    apt-get install -y nodejs
 fi
 
 log "Node.js $(node -v) / npm $(npm -v) ready"

@@ -11,7 +11,7 @@ from parsers import mikrotik, ruijie, ruckus, unifi
 BRAND_DEVICE_TYPE = {
     "mikrotik": "mikrotik_routeros",
     "ruijie": "ruijie_os",
-    "ruckus": "ruckus_fastiron",
+    "ruckus": "terminal_server",
     "unifi": "linux",
 }
 
