@@ -43,3 +43,8 @@ PROJECT_HISTORY.md
 AGENTS.md
 CLAUDE.md
 voltagent_design.md
+
+# database
+backend/*.db
+backend/*.db-wal
+backend/*.db-shm
